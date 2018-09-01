@@ -118,11 +118,19 @@ function FTDI:cmd_19()
    end
 end
 
+function FTDI:cmd_18()
+    self:cmd_19()
+end
+
 function FTDI:cmd_1b()
    local len = self.o:read_uint8() + 1
    local outval = self.o:read_uint8()
    self:comment("data out bits", len, "outval", outval)
    self:clock(len, {TDI = outval})
+end
+
+function FTDI:cmd_1a()
+    self:cmd_1b()
 end
 
 function FTDI:cmd_28()
@@ -134,11 +142,25 @@ function FTDI:cmd_28()
    end
 end
 
+function FTDI:cmd_2c()
+   self:cmd_28()
+end
+
 function FTDI:cmd_2a()
    local len = self.o:read_uint8() + 1
    local inval = bit32.rshift(self.i:read_uint8(), 8 - len)
    self:comment("data in bits", len, "inval", inval)
    self:clock(len, {TDO = inval})
+end
+
+function FTDI:cmd_2e()
+   self:cmd_2a()
+end
+
+function FTDI:cmd_8e()
+   local len = self.o:read_uint8() + 1
+   self:comment("clock bits", len)
+   self:clock(len, {})
 end
 
 function FTDI:cmd_39()
@@ -151,12 +173,42 @@ function FTDI:cmd_39()
    end
 end
 
+function FTDI:cmd_38()
+    self:cmd_39()
+end
+
+function FTDI:cmd_3c()
+    self:cmd_39()
+end
+
+function FTDI:cmd_3d()
+    self:cmd_39()
+end
+
 function FTDI:cmd_3b()
    local len = self.o:read_uint8() + 1
    local outval = self.o:read_uint8()
    local inval = self.i:read_uint8()
    self:comment("data in out bits", len, "outval", outval, "inval", inval)
    self:clock(len, {TDI = outval, TDO = inval})
+end
+
+function FTDI:cmd_3a()
+    self:cmd_3b()
+end
+
+function FTDI:cmd_3e()
+    self:cmd_3b()
+end
+
+function FTDI:cmd_3f()
+    self:cmd_3b()
+end
+
+function FTDI:cmd_8f()
+   local len = self.o:read_uint16() + 1
+   self:comment("clock bytes", len)
+   self:clock(len*8, {})
 end
 
 function FTDI:cmd_4b()
@@ -176,6 +228,18 @@ function FTDI:cmd_6b()
    self:clock(len, {TMS = outval, TDO = inval})
 end
 
+function FTDI:cmd_6a()
+    self:cmd_6b()
+end
+
+function FTDI:cmd_6e()
+    self:cmd_6b()
+end
+
+function FTDI:cmd_6f()
+    self:cmd_6b()
+end
+
 function FTDI:cmd_80()
    local val = self.o:read_uint8()
    local dir = self.o:read_uint8()
@@ -186,6 +250,16 @@ function FTDI:cmd_82()
    local val = self.o:read_uint8()
    local dir = self.o:read_uint8()
    self:setpins(1, val, dir)
+end
+
+function FTDI:cmd_81()
+   local val = self.i:read_uint8()
+   self:setpins(0, val, 0xff)
+end
+
+function FTDI:cmd_83()
+   local val = self.i:read_uint8()
+   self:setpins(1, val, 0xff)
 end
 
 function FTDI:cmd_85()
