@@ -114,6 +114,7 @@ FTDI.pins = {
     [13] = { name = "GPIO13", size = 1 },
     [14] = { name = "GPIO14", size = 1 },
     [15] = { name = "GPIO15", size = 1 },
+    [16] = { name = "CMD", size = 8 },
 }
 
 
@@ -331,6 +332,10 @@ function FTDI:process()
    while not self.o:eof() do
       local opb = self.o:read_uint8()
 
+      -- clear the command and reset it, so that we can tell
+      -- where one command ends and the next begins
+      self:set("CMD", "x")
+      self:set("CMD", opb)
       local fun = self[("cmd_%02x"):format(opb)]
       if not fun then
          fun = self["cmd_unknown"]
