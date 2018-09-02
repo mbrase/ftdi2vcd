@@ -115,6 +115,46 @@ FTDI.pins = {
     [14] = { name = "GPIO14", size = 1 },
     [15] = { name = "GPIO15", size = 1 },
     [16] = { name = "CMD", size = 8 },
+    [17] = { name = "JTAG", size = 4 },
+}
+
+FTDI.jtagmap = {
+   [0x0] = "Reset",
+   [0x1] = "Run-Test/Idle",
+   [0x2] = "Select-DR",
+   [0x3] = "Capture-DR",
+   [0x4] = "Shift-DR",
+   [0x5] = "Exit1-DR",
+   [0x6] = "Pause-DR",
+   [0x7] = "Exit2-DR",
+   [0x8] = "Update-DR",
+   [0x9] = "Select-IR",
+   [0xA] = "Capture-DR",
+   [0xB] = "Shift-DR",
+   [0xC] = "Exit1-DR",
+   [0xD] = "Pause-DR",
+   [0xE] = "Exit2-DR",
+   [0xF] = "Update-DR",
+}
+
+FTDI.jtagnext = {
+   ["x"] = { [0] = 0x0, [1] = 0x0 },
+   [0x0] = { [0] = 0x1, [1] = 0x0 }, -- Reset
+   [0x1] = { [0] = 0x1, [1] = 0x2 }, -- Run-Test/Idle
+   [0x2] = { [0] = 0x3, [1] = 0x9 }, -- Select-DR
+   [0x3] = { [0] = 0x4, [1] = 0x5 }, -- Capture-DR
+   [0x4] = { [0] = 0x4, [1] = 0x5 }, -- Shift-DR
+   [0x5] = { [0] = 0x6, [1] = 0x8 }, -- Exit1-DR
+   [0x6] = { [0] = 0x6, [1] = 0x7 }, -- Pause-DR
+   [0x7] = { [0] = 0x4, [1] = 0x8 }, -- Exit2-DR
+   [0x8] = { [0] = 0x1, [1] = 0x2 }, -- Update-DR
+   [0x9] = { [0] = 0xA, [1] = 0x0 }, -- Select-IR
+   [0xA] = { [0] = 0xB, [1] = 0xC }, -- Capture-DR
+   [0xB] = { [0] = 0xB, [1] = 0xC }, -- Shift-DR
+   [0xC] = { [0] = 0xD, [1] = 0xF }, -- Exit1-DR
+   [0xD] = { [0] = 0xD, [1] = 0xE }, -- Pause-DR
+   [0xE] = { [0] = 0xB, [1] = 0xF }, -- Exit2-DR
+   [0xF] = { [0] = 0x1, [1] = 0x2 }, -- Update-DR
 }
 
 
@@ -390,6 +430,14 @@ function FTDI:time_passes()
    print(("#%d"):format(self.time))
 end
 
+function FTDI:update_jtag()
+   local tms = self:get("TMS")
+   if tms == "x" then
+      return
+   end
+   self:set("JTAG", self.jtagnext[self:get("JTAG")][tms])
+end
+
 function FTDI:clock(len, sigs)
    for i = 0, len - 1 do
       for k, v in pairs(sigs) do
@@ -398,6 +446,7 @@ function FTDI:clock(len, sigs)
       self:set("CLK", 0)
       self:time_passes()
       self:set("CLK", 1)
+      self:update_jtag() -- jtag updates on rising edge
       self:time_passes()
    end
 end
