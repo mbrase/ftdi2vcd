@@ -97,15 +97,37 @@ end
 FTDI = {}
 FTDI.__index = FTDI
 
-FTDI.pinmap = { CLK = 0, TDI = 1, TDO = 2, TMS = 3 }
+FTDI.pins = {
+    [0] = { name = "CLK", size = 1 },
+    [1] = { name = "TDI", size = 1 },
+    [2] = { name = "TDO", size = 1 },
+    [3] = { name = "TMS", size = 1 },
+    [4] = { name = "GPIO4", size = 1 },
+    [5] = { name = "GPIO5", size = 1 },
+    [6] = { name = "GPIO6", size = 1 },
+    [7] = { name = "GPIO7", size = 1 },
+    [8] = { name = "GPIO8", size = 1 },
+    [9] = { name = "GPIO9", size = 1 },
+    [10] = { name = "GPIO10", size = 1 },
+    [11] = { name = "GPIO11", size = 1 },
+    [12] = { name = "GPIO12", size = 1 },
+    [13] = { name = "GPIO13", size = 1 },
+    [14] = { name = "GPIO14", size = 1 },
+    [15] = { name = "GPIO15", size = 1 },
+}
+
 
 function FTDI.new(outdata, indata)
    local self = setmetatable({}, FTDI)
    self.o = BBuf.new(outdata)
    self.i = BBuf.new(indata)
    self.time = 0
-   self.pinstate = { "X", "X", "X", "X", "X", "X", "X", "X",
-                     "X", "X", "X", "X", "X", "X", "X", "X" }
+   self.pinstate = {}
+   self.pinmap = {}
+   for i = 0, #self.pins  do
+      self.pinstate[i] = "x"
+      self.pinmap[self.pins[i]["name"]] = i
+   end
    return self
 end
 
@@ -300,14 +322,9 @@ function FTDI:cmd_unknown(opb)
 end
 
 function FTDI:process()
-   for i = 0, 15 do
-      local name = i
-      for k, v in pairs(self.pinmap) do
-         if v == i then
-            name = k
-         end
-      end
-      print(("$var wire 1 %d %s $end"):format(i, name))
+   for i = 0, #self.pins do
+      local p = self.pins[i]
+      print(("$var wire %d %d %s $end"):format(p["size"], i, p["name"]))
    end
    print("$enddefinitions $end")
 
@@ -333,13 +350,34 @@ function FTDI:set(sig, val)
       sig = self.pinmap[sig]
    end
 
-   if self.pinstate[sig + 1] == val then
+   if self.pinstate[sig] == val then
       return
    end
 
-   self.pinstate[sig + 1] = val
+   self.pinstate[sig] = val
 
-   print(("%d%s"):format(val, sig))
+   local size = self.pins[sig]["size"]
+   if size == 1 then
+      print(("%s%s"):format(val, sig))
+   else
+      local t = {}
+      for i = 0, size - 1 do
+         if val == 'x' then
+            t[size - i] = 'x'
+         else
+            t[size - i] = bit32.extract(val, i)
+         end
+      end
+      print(("b%s %s"):format(table.concat(t), sig))
+   end
+end
+
+function FTDI:get(sig)
+   if self.pinmap[sig] then
+      sig = self.pinmap[sig]
+   end
+
+   return self.pinstate[sig]
 end
 
 function FTDI:time_passes()
