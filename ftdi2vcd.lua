@@ -116,6 +116,7 @@ FTDI.pins = {
     [15] = { name = "GPIO15", size = 1 },
     [16] = { name = "CMD", size = 8 },
     [17] = { name = "JTAG", size = 4 },
+    [18] = { name = "COUNTER", size = 20 },
 }
 
 FTDI.jtagmap = {
@@ -369,6 +370,7 @@ function FTDI:process()
    end
    print("$enddefinitions $end")
 
+   self:set("COUNTER", 0)
    while not self.o:eof() do
       local opb = self.o:read_uint8()
 
@@ -376,6 +378,7 @@ function FTDI:process()
       -- where one command ends and the next begins
       self:set("CMD", "x")
       self:set("CMD", opb)
+      self:set("COUNTER", self:get("COUNTER")+1)
       local fun = self[("cmd_%02x"):format(opb)]
       if not fun then
          fun = self["cmd_unknown"]
